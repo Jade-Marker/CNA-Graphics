@@ -9,29 +9,41 @@ namespace CNA_Graphics
     class Renderer : Component
     {
         Mesh meshComponent;
+        Texture textureComponent;
 
         public override void Initialise(Entity parent)
         {
             meshComponent = (Mesh)parent.GetComponent<Mesh>();
+            textureComponent = (Texture)parent.GetComponent<Texture>();
 
             base.Initialise(parent);
         }
 
         public override void Draw(Matrix view, Matrix projection)
         {
-            Matrix world = parent.transform.CreateWorldMatrix();
-
-            foreach (ModelMesh mesh in meshComponent.model.Meshes)
+            if (meshComponent != null)
             {
-                foreach (BasicEffect effect in mesh.Effects)
+                Matrix world = parent.transform.CreateWorldMatrix();
+
+                foreach (ModelMesh mesh in meshComponent.model.Meshes)
                 {
-                    effect.World = world;
-                    effect.View = view;
-                    effect.Projection = projection;
-                    effect.Texture = meshComponent.texture;
-                    effect.TextureEnabled = true;
+                    foreach (BasicEffect effect in mesh.Effects)
+                    {
+                        effect.World = world;
+                        effect.View = view;
+                        effect.Projection = projection;
+                        if (textureComponent != null)
+                        {
+                            effect.Texture = textureComponent.texture;
+                            effect.TextureEnabled = true;
+                        }
+                        else
+                        {
+                            effect.TextureEnabled = false;
+                        }
+                    }
+                    mesh.Draw();
                 }
-                mesh.Draw();
             }
         }
     }

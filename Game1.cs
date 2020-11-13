@@ -34,16 +34,17 @@ namespace CNA_Graphics
             fishModel = Content.Load<Model>("fish");
 
             List<Component> components1 = new List<Component>();
-            components1.Add(new Mesh(fishModel, fishTexture));
+            components1.Add(new Mesh(fishModel));
+            components1.Add(new Texture(fishTexture));
             components1.Add(new Renderer());
             components1.Add(new Rotator());
             Entity fish1 = new Entity(new Transform(new Vector3(-2, 0, 0), new Vector3(MathHelper.ToRadians(90), 0, 0), new Vector3(1, 1, 1)), components1);
 
             List<Component> components2 = new List<Component>();
-            components2.Add(new Mesh(fishModel, fishTexture));
+            components2.Add(new Mesh(fishModel));
+            components2.Add(new Texture(fishTexture));
             components2.Add(new Renderer());
-            components2.Add(new Rotator());
-            Entity fish2 = new Entity(new Transform(new Vector3(2, 0, -2), new Vector3(0, 0, 0), new Vector3(1, 1, 3)), components2);
+            Entity fish2 = new Entity(new Transform(new Vector3(2, 0, -2), new Vector3(0, MathHelper.ToRadians(-90), 0), new Vector3(1, 1, 3)), components2);
 
             gameObjects.Add(fish1);
             gameObjects.Add(fish2);
