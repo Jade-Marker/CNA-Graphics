@@ -1,21 +1,18 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
 
 namespace CNA_Graphics
 {
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
-        private SpriteBatch _spriteBatch;
-
-        Texture2D goomba;
-        Vector2 position;
 
         Texture2D fishTexture;
-        Model model;
+        Model fishModel;
 
-        float angle;
+        List<GameObject> gameObjects = new List<GameObject>();
 
         DepthStencilState depthStencilLessThan = new DepthStencilState() { DepthBufferEnable = true, DepthBufferFunction = CompareFunction.Less };
 
@@ -28,27 +25,32 @@ namespace CNA_Graphics
 
         protected override void Initialize()
         {
-            position = new Vector2(_graphics.PreferredBackBufferWidth/2, _graphics.PreferredBackBufferHeight/2);
-
-            angle = 0;
-
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            goomba = Content.Load<Texture2D>("goomba");
-
             fishTexture = Content.Load<Texture2D>("fishTexture");
-            model = Content.Load<Model>("fish");
+            fishModel = Content.Load<Model>("fish");
+
+            GameObject fish1 = new GameObject(fishModel, fishTexture, new Transform(new Vector3(-2, 0, 0), new Vector3(MathHelper.ToRadians(90), 0, 0), new Vector3(1, 1, 1)));
+            GameObject fish2 = new GameObject(fishModel, fishTexture, new Transform(new Vector3(2, 0, -2), new Vector3(0, 0, 0), new Vector3(1, 1, 3)));
+        
+            gameObjects.Add(fish1);
+            gameObjects.Add(fish2);
         }
 
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+
+            for (int i = 0; i < gameObjects.Count; i++)
+                gameObjects[i].Update(deltaTime);
+
 
             base.Update(gameTime);
         }
@@ -61,40 +63,15 @@ namespace CNA_Graphics
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
 
-            angle += (float)gameTime.ElapsedGameTime.TotalSeconds * 30.0f;
-
-            Matrix world = Matrix.CreateRotationY(MathHelper.ToRadians(angle));
 
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f);
 
             Matrix view = Matrix.CreateTranslation(2, 0, -3);
 
-            DrawModel(model, world, view, projection);
-            DrawModel(model, world * Matrix.CreateTranslation(2, 0, -2), view, projection);
-
-            _spriteBatch.Begin();
-
-            _spriteBatch.Draw(goomba, position, Color.White);
-
-            _spriteBatch.End();
+            for (int i = 0; i < gameObjects.Count; i++)
+                gameObjects[i].Draw(view, projection);
 
             base.Draw(gameTime);
-        }
-
-        private void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
-        {
-            foreach (ModelMesh mesh in model.Meshes)
-            {
-                foreach (BasicEffect effect in mesh.Effects)
-                {
-                    effect.World = world;
-                    effect.View = view;
-                    effect.Projection = projection;
-                    effect.Texture = fishTexture;
-                    effect.TextureEnabled = true;
-                }
-                mesh.Draw();
-            }
         }
     }
 }
