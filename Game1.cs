@@ -12,7 +12,7 @@ namespace CNA_Graphics
         Texture2D fishTexture;
         Model fishModel;
 
-        List<GameObject> gameObjects = new List<GameObject>();
+        List<Entity> gameObjects = new List<Entity>();
 
         DepthStencilState depthStencilLessThan = new DepthStencilState() { DepthBufferEnable = true, DepthBufferFunction = CompareFunction.Less };
 
@@ -33,9 +33,18 @@ namespace CNA_Graphics
             fishTexture = Content.Load<Texture2D>("fishTexture");
             fishModel = Content.Load<Model>("fish");
 
-            GameObject fish1 = new GameObject(fishModel, fishTexture, new Transform(new Vector3(-2, 0, 0), new Vector3(MathHelper.ToRadians(90), 0, 0), new Vector3(1, 1, 1)));
-            GameObject fish2 = new GameObject(fishModel, fishTexture, new Transform(new Vector3(2, 0, -2), new Vector3(0, 0, 0), new Vector3(1, 1, 3)));
-        
+            List<Component> components1 = new List<Component>();
+            components1.Add(new Mesh(fishModel, fishTexture));
+            components1.Add(new Renderer());
+            components1.Add(new Rotator());
+            Entity fish1 = new Entity(new Transform(new Vector3(-2, 0, 0), new Vector3(MathHelper.ToRadians(90), 0, 0), new Vector3(1, 1, 1)), components1);
+
+            List<Component> components2 = new List<Component>();
+            components2.Add(new Mesh(fishModel, fishTexture));
+            components2.Add(new Renderer());
+            components2.Add(new Rotator());
+            Entity fish2 = new Entity(new Transform(new Vector3(2, 0, -2), new Vector3(0, 0, 0), new Vector3(1, 1, 3)), components2);
+
             gameObjects.Add(fish1);
             gameObjects.Add(fish2);
         }
