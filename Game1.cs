@@ -48,6 +48,15 @@ namespace CNA_Graphics
 
             gameObjects.Add(fish1);
             gameObjects.Add(fish2);
+
+            List<Component> components3 = new List<Component>();
+            Camera cameraComponent = new Camera(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f));
+            components3.Add(cameraComponent);
+            components3.Add(new CameraController());
+            Entity camera = new Entity(new Transform(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1)), components3);
+            gameObjects.Add(camera);
+
+            CameraManager.MainCamera = cameraComponent;
         }
 
         protected override void Update(GameTime gameTime)
@@ -61,7 +70,6 @@ namespace CNA_Graphics
             for (int i = 0; i < gameObjects.Count; i++)
                 gameObjects[i].Update(deltaTime);
 
-
             base.Update(gameTime);
         }
 
@@ -73,10 +81,8 @@ namespace CNA_Graphics
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
 
-
-            Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f);
-
-            Matrix view = Matrix.CreateTranslation(2, 0, -3);
+            Matrix view = CameraManager.MainCamera.GetViewMatrix();
+            Matrix projection = CameraManager.MainCamera.GetProjectionMatrix();
 
             for (int i = 0; i < gameObjects.Count; i++)
                 gameObjects[i].Draw(view, projection);
