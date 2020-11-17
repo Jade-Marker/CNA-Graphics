@@ -44,7 +44,7 @@ namespace CNA_Graphics
             components2.Add(new Mesh(fishModel));
             components2.Add(new Texture(fishTexture));
             components2.Add(new Renderer());
-            Entity fish2 = new Entity(new Transform(new Vector3(2, 0, -2), new Vector3(0, MathHelper.ToRadians(-90), 0), new Vector3(1, 1, 3)), components2);
+            Entity fish2 = new Entity(new Transform(new Vector3(2, 0, -2), new Vector3(0, MathHelper.ToRadians(-90), 0), new Vector3(1, 1, 1)), components2);
 
             gameObjects.Add(fish1);
             gameObjects.Add(fish2);
@@ -52,9 +52,17 @@ namespace CNA_Graphics
             List<Component> components3 = new List<Component>();
             Camera cameraComponent = new Camera(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f));
             components3.Add(cameraComponent);
-            components3.Add(new CameraController());
+            components3.Add(new CameraController(_graphics, this));
             Entity camera = new Entity(new Transform(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1)), components3);
             gameObjects.Add(camera);
+
+            gameObjects.Add(new Entity(
+                new Transform(new Vector3(0, -1, 0), new Vector3(MathHelper.ToRadians(-90), MathHelper.ToRadians(90), 0), new Vector3(10, 10, 10)),
+                new List<Component>() {
+                    new Mesh(Content.Load<Model>("plane")),
+                    new Texture(Content.Load<Texture2D>("grass")),
+                    new Renderer()
+                })) ;
 
             CameraManager.MainCamera = cameraComponent;
         }
