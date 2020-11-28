@@ -30,7 +30,9 @@ namespace CNA_Graphics
 
         public override void Update(float deltaTime)
         {
-            if (_game.IsActive)
+            MouseState state = Mouse.GetState();
+
+            if (_game.IsActive && (state.X > 0) && (state.X < _graphics.PreferredBackBufferWidth) && (state.Y > 0) && (state.Y < _graphics.PreferredBackBufferHeight))
             {
                 HandleMovement(deltaTime);
                 HandleRotation(deltaTime);
