@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Common;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
@@ -52,7 +53,8 @@ namespace CNA_Graphics
             List<Component> components3 = new List<Component>();
             Camera cameraComponent = new Camera(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f));
             components3.Add(cameraComponent);
-            components3.Add(new CameraController(_graphics, this));
+            CameraController player = new CameraController(_graphics, this);
+            components3.Add(player);
             Entity camera = new Entity(new Transform(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1)), components3);
             gameObjects.Add(camera);
 
@@ -65,6 +67,12 @@ namespace CNA_Graphics
                 })) ;
 
             CameraManager.MainCamera = cameraComponent;
+
+            gameObjects.Add(new Entity(
+                new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
+                new List<Component>() {
+                    new ClientManager(player)
+                }));
         }
 
         protected override void Update(GameTime gameTime)

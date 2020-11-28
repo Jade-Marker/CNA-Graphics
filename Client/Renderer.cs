@@ -11,12 +11,10 @@ namespace CNA_Graphics
         Mesh meshComponent;
         Texture textureComponent;
 
-        public override void Initialise(Entity parent)
+        public override void Start()
         {
             meshComponent = (Mesh)parent.GetComponent<Mesh>();
             textureComponent = (Texture)parent.GetComponent<Texture>();
-
-            base.Initialise(parent);
         }
 
         public override void Draw(Matrix view, Matrix projection)

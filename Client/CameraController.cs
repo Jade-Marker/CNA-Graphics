@@ -22,11 +22,10 @@ namespace CNA_Graphics
             _game = game;
         }
 
-        public override void Initialise(Entity parent)
+        public override void Start()
         {
             _game.IsMouseVisible = false;
             Mouse.SetPosition(_graphics.PreferredBackBufferWidth / 2, _graphics.PreferredBackBufferHeight / 2);
-            base.Initialise(parent);
         }
 
         public override void Update(float deltaTime)

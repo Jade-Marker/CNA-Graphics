@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Common;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,9 @@ namespace CNA_Graphics
 
             foreach (Component component in _components)
                 component.Initialise(this);
+
+            foreach (Component component in _components)
+                component.Start();
         }
 
         public void Update(float deltaTime)
