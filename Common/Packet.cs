@@ -46,9 +46,9 @@ namespace Common
             writer.Flush();
         }
 
-        public static Packet UDPReadPacket(UdpClient udpClient, BinaryFormatter formatter)
+        public static Packet UDPReadPacket(UdpClient udpClient, BinaryFormatter formatter, out IPEndPoint endPoint)
         {
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, 0);
+            endPoint = new IPEndPoint(IPAddress.Any, 0);
             byte[] bytes = udpClient.Receive(ref endPoint);
             MemoryStream memoryStream = new MemoryStream(bytes);
 
@@ -65,6 +65,16 @@ namespace Common
             byte[] buffer = memoryStream.GetBuffer();
 
             udpClient.Send(buffer, buffer.Length);
+        }
+
+        public static void UDPSendPacket(UdpClient udpClient, IPEndPoint endPoint, BinaryFormatter formatter, Packet packet)
+        {
+            MemoryStream memoryStream = new MemoryStream();
+            formatter.Serialize(memoryStream, packet);
+
+            byte[] buffer = memoryStream.GetBuffer();
+
+            udpClient.Send(buffer, buffer.Length, endPoint);
         }
     }
 }

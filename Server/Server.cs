@@ -55,14 +55,19 @@ namespace Server
             BinaryFormatter formatter = new BinaryFormatter();
             while (true)
             {
-                Packet packet = Packet.UDPReadPacket(udpListener, formatter);
+                IPEndPoint endPoint;
+                Packet packet = Packet.UDPReadPacket(udpListener, formatter, out endPoint);
 
                 switch (packet.packetType)
                 {
                     case PacketType.CLIENT_MOVE:
                         MovementPacket movementPacket = packet as MovementPacket;
-                        Transform transform = movementPacket.GetTransform();
-                        Console.WriteLine("Transform position: " + "(" + transform.position.X + ", " + transform.position.Y + ", " + transform.position.Z + ")");
+
+                        foreach (Client client in clients)
+                        {
+                            if ((client.endPoint != null) && (endPoint.ToString() != client.endPoint.ToString()))
+                                Packet.UDPSendPacket(udpListener, client.endPoint, formatter, movementPacket);
+                        }
                         break;
                 }
             }

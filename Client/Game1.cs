@@ -71,8 +71,11 @@ namespace CNA_Graphics
             gameObjects.Add(new Entity(
                 new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new ClientManager(player)
-                }));
+                    new ClientManager(player),
+                    new Mesh(fishModel),
+                    new Texture(fishTexture),
+                    new Renderer()
+        }));
         }
 
         protected override void Update(GameTime gameTime)

@@ -11,8 +11,9 @@ namespace Server
 {
     class Client
     {
-        private Socket _socket;
         public IPEndPoint endPoint;
+
+        private Socket _socket;
         private NetworkStream _stream;
         private BinaryReader _reader;
         private BinaryWriter _writer;
@@ -50,7 +51,7 @@ namespace Server
             }
         }
 
-        public void Send(Packet message)
+        public void TCPSend(Packet message)
         {
             lock (_writeLock)
             {

@@ -1,4 +1,5 @@
 ﻿using Common;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -66,14 +67,18 @@ namespace CNA_Graphics
         {
             try
             {
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, 0);
+                IPEndPoint endPoint;
                 while (true)
                 {
-                    Packet packet = Packet.UDPReadPacket(udpClient, formatter);
+                    Packet packet = Packet.UDPReadPacket(udpClient, formatter, out endPoint);
 
                     switch (packet.packetType)
                     {
                         case PacketType.CLIENT_MOVE:
+                            Transform transform = ((MovementPacket)packet).GetTransform();
+                            parent.transform.position = transform.position;
+                            parent.transform.rotation = new Vector3(transform.rotation.Z, transform.rotation.Y + MathHelper.ToRadians(90), transform.rotation.X);
+                            parent.transform.scale = transform.scale;
                             break;
                     }
                 }
