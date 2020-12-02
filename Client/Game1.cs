@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
 using System.Collections.Generic;
 
 namespace CNA_Graphics
@@ -71,11 +72,9 @@ namespace CNA_Graphics
             gameObjects.Add(new Entity(
                 new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new ClientManager(player),
-                    new Mesh(fishModel),
-                    new Texture(fishTexture),
-                    new Renderer()
-        }));
+                    new ClientManager(player, gameObjects, fishModel, fishTexture),
+                    
+                }));
         }
 
         protected override void Update(GameTime gameTime)
@@ -107,6 +106,14 @@ namespace CNA_Graphics
                 gameObjects[i].Draw(view, projection);
 
             base.Draw(gameTime);
+        }
+
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            foreach (Entity entity in gameObjects)
+                entity.End();
+
+            base.OnExiting(sender, args);
         }
     }
 }

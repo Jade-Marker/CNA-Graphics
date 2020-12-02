@@ -17,5 +17,6 @@ namespace CNA_Graphics
 
         public virtual void Update(float deltaTime) { }
         public virtual void Draw(Matrix view, Matrix projection) { }
+        public virtual void End() { }
     }
 }

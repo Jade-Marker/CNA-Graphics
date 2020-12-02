@@ -42,11 +42,14 @@ namespace Common
             return transform;
         }
 
-        public MovementPacket(Transform transform)
+        public Guid guid;
+        public MovementPacket(Transform transform, Guid guid)
         {
             position = Vector.FromVec3(transform.position);
             rotation = Vector.FromVec3(transform.rotation);
             scale = Vector.FromVec3(transform.scale);
+
+            this.guid = guid;
 
             packetType = PacketType.CLIENT_MOVE;
         }

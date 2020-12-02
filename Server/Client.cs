@@ -12,6 +12,7 @@ namespace Server
     class Client
     {
         public IPEndPoint endPoint;
+        public Guid guid;
 
         private Socket _socket;
         private NetworkStream _stream;
@@ -21,7 +22,7 @@ namespace Server
         private object _readLock;
         private object _writeLock;
 
-        public Client(Socket socket)
+        public Client(Socket socket, Guid guid)
         {
             _readLock = new object();
             _writeLock = new object();
@@ -33,6 +34,8 @@ namespace Server
 
             _reader = new BinaryReader(_stream);
             _writer = new BinaryWriter(_stream);
+
+            this.guid = guid;
         }
 
         public void Close()

@@ -13,7 +13,8 @@ namespace Common
         EMPTY,
         CLIENT_CONNECT,
         CLIENT_DISCONNECT,
-        CLIENT_MOVE
+        CLIENT_MOVE,
+        CLIENT_LIST
     };
 
     [Serializable]

@@ -38,6 +38,12 @@ namespace CNA_Graphics
                 component.Draw(view, projection);
         }
 
+        public void End()
+        {
+            foreach (Component component in _components)
+                component.End();
+        }
+
         public Component GetComponent<T>()
         {
             Type type = typeof(T);

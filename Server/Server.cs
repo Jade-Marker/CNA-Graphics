@@ -36,7 +36,7 @@ namespace Server
             {
                 Socket socket = tcpListener.AcceptSocket();
 
-                Client client = new Client(socket);
+                Client client = new Client(socket, Guid.NewGuid());
                 clients.TryAdd(client);
 
                 Thread thread = new Thread(() => { TCPClientMethod(client); });
@@ -56,41 +56,81 @@ namespace Server
             while (true)
             {
                 IPEndPoint endPoint;
-                Packet packet = Packet.UDPReadPacket(udpListener, formatter, out endPoint);
+                Packet packet;
 
-                switch (packet.packetType)
+                try
                 {
-                    case PacketType.CLIENT_MOVE:
-                        MovementPacket movementPacket = packet as MovementPacket;
+                    packet = Packet.UDPReadPacket(udpListener, formatter, out endPoint);
 
-                        foreach (Client client in clients)
-                        {
-                            if ((client.endPoint != null) && (endPoint.ToString() != client.endPoint.ToString()))
-                                Packet.UDPSendPacket(udpListener, client.endPoint, formatter, movementPacket);
-                        }
-                        break;
+                    switch (packet.packetType)
+                    {
+                        case PacketType.CLIENT_MOVE:
+                            MovementPacket movementPacket = packet as MovementPacket;
+
+                            foreach (Client client in clients)
+                            {
+                                if ((client.endPoint != null) && client.endPoint.ToString() == endPoint.ToString())
+                                    movementPacket.guid = client.guid;
+                            }
+
+                            foreach (Client client in clients)
+                            {
+                                if ((client.endPoint != null) && (endPoint.ToString() != client.endPoint.ToString()))
+                                    Packet.UDPSendPacket(udpListener, client.endPoint, formatter, movementPacket);
+                            }
+                            break;
+                    }
                 }
+                catch (System.Net.Sockets.SocketException)
+                {
+                }
+
             }
         }
 
         private void TCPClientMethod(Client client)
         {
             Packet receivedMessage;
-            while ((receivedMessage = client.Read()) != null)
-            {
-                switch (receivedMessage.packetType)
-                {
-                    case PacketType.CLIENT_CONNECT:
-                        client.endPoint = IPEndPoint.Parse(((ConnectPacket)receivedMessage).endPoint);
-                        break;
 
-                    case PacketType.CLIENT_DISCONNECT:
-                        break;
+            try
+            {
+                while ((receivedMessage = client.Read()) != null)
+                {
+                    switch (receivedMessage.packetType)
+                    {
+                        case PacketType.CLIENT_CONNECT:
+                            ConnectPacket connectPacket = receivedMessage as ConnectPacket;
+                            connectPacket.guid = client.guid;
+
+                            client.endPoint = IPEndPoint.Parse(connectPacket.endPoint);
+                            List<Guid> users = new List<Guid>();
+                            foreach (Client currClient in clients)
+                            {
+                                if (currClient != client)
+                                {
+                                    currClient.TCPSend(connectPacket);
+                                    users.Add(currClient.guid);
+                                }
+                            }
+
+                            client.TCPSend(new ClientListPacket(users));
+
+                            break;
+                    }
                 }
             }
+            catch (System.IO.EndOfStreamException)
+            {
+            }
+            
 
             client.Close();
             clients.TryRemove(client);
+
+            foreach (Client currClient in clients)
+            {
+                currClient.TCPSend(new DisconnectPacket(client.guid));
+            }
         }
     }
 }

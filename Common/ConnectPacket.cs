@@ -9,10 +9,11 @@ namespace Common
     public class ConnectPacket:Packet
     {
         public string endPoint;
-
-        public ConnectPacket(IPEndPoint endPoint)
+        public Guid guid;
+        public ConnectPacket(IPEndPoint endPoint, Guid guid)
         {
             this.endPoint = endPoint.ToString();
+            this.guid = guid;
             packetType = PacketType.CLIENT_CONNECT;
         }
     }

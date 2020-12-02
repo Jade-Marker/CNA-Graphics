@@ -1,5 +1,6 @@
 ﻿using Common;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,10 +21,25 @@ namespace CNA_Graphics
         private BinaryReader reader;
         private BinaryFormatter formatter;
         private CameraController player;
+        private List<Entity> entities;
+        private Model fishModel;
+        private Texture2D fishTexture;
+        private Dictionary<Guid, Entity> users;
 
-        public ClientManager(CameraController player)
+        public override void End()
+        {
+            tcpClient.Close();
+            udpClient.Close();
+        }
+
+        public ClientManager(CameraController player, List<Entity> entities, Model fishModel, Texture2D fishTexture)
         {
             this.player = player;
+            this.entities = entities;
+            this.fishModel = fishModel;
+            this.fishTexture = fishTexture;
+
+            users = new Dictionary<Guid, Entity>();
         }
 
         public bool Connect(string ipAddress, int port)
@@ -53,13 +69,19 @@ namespace CNA_Graphics
         {
             if (Connect("127.0.0.1", 4444))
             {
-                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint), formatter, writer);
+                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty), formatter, writer);
 
                 Thread udpThread = new Thread(() =>
                 {
                     UDPProcessServerResponse();
                 });
                 udpThread.Start();
+
+                Thread tcpThread = new Thread(() =>
+                {
+                    TCPProcessServerResponse();
+                });
+                tcpThread.Start();
             }
         }
 
@@ -75,10 +97,15 @@ namespace CNA_Graphics
                     switch (packet.packetType)
                     {
                         case PacketType.CLIENT_MOVE:
-                            Transform transform = ((MovementPacket)packet).GetTransform();
-                            parent.transform.position = transform.position;
-                            parent.transform.rotation = new Vector3(transform.rotation.Z, transform.rotation.Y + MathHelper.ToRadians(90), transform.rotation.X);
-                            parent.transform.scale = transform.scale;
+                            MovementPacket movement = packet as MovementPacket;
+
+                            if(users.ContainsKey(movement.guid) && users[movement.guid] != null)
+                            {
+                                Transform transform = movement.GetTransform();
+                                users[movement.guid].transform.position = transform.position;
+                                users[movement.guid].transform.rotation = new Vector3(transform.rotation.Z, transform.rotation.Y + MathHelper.ToRadians(90), transform.rotation.X);
+                                users[movement.guid].transform.scale = transform.scale;
+                            }
                             break;
                     }
                 }
@@ -89,9 +116,67 @@ namespace CNA_Graphics
             }
         }
 
+        private void TCPProcessServerResponse()
+        {
+            Packet serverResponse;
+            try
+            {
+                while ((serverResponse = Packet.TCPReadPacket(reader, formatter)) != null)
+                {
+                    Entity user;
+
+                    switch (serverResponse.packetType)
+                    {
+                        case PacketType.CLIENT_LIST:
+                            ClientListPacket clientList = serverResponse as ClientListPacket;
+                            foreach (Guid client in clientList.userList)
+                            {
+                                user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
+                                    new List<Component>() {
+                                    new Mesh(fishModel),
+                                    new Texture(fishTexture),
+                                    new Renderer()
+                                });
+                                entities.Add(user);
+                                users.Add(client, user);
+                            }
+
+                            break;
+
+                        case PacketType.CLIENT_CONNECT:
+                            user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
+                            new List<Component>() {
+                                new Mesh(fishModel),
+                                new Texture(fishTexture),
+                                new Renderer()
+                            });
+                            entities.Add(user);
+                            users.Add((serverResponse as ConnectPacket).guid, user);
+                            break;
+
+                        case PacketType.CLIENT_DISCONNECT:
+                            DisconnectPacket disconnectPacket = serverResponse as DisconnectPacket;
+                            if(users.ContainsKey(disconnectPacket.guid))
+                            {
+                                user = users[disconnectPacket.guid];
+
+                                entities.Remove(user);
+
+                                users.Remove(disconnectPacket.guid);
+                            }
+                            break;
+                    }
+                }
+            }
+            catch (System.IO.IOException)
+            {
+
+            }
+        }
+
         public override void Update(float deltaTime)
         {
-            Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform));
+            Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
         }
     }
 }
