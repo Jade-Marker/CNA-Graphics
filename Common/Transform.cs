@@ -3,8 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CNA_Graphics
+namespace Common
 {
+    [Serializable]
     public class Transform
     {
         public Vector3 position;
