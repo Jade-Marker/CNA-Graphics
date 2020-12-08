@@ -8,13 +8,18 @@ namespace CNA_Graphics
 {
     class CameraController : Component
     {
-        const float cMoveSpeed = 0.125f;
+        const float cMoveSpeed = 5.0f;
         const float cRotationSpeed = 0.1f;
+        const int cRotationThreshold = 5;
         readonly float cMaxRotation = MathHelper.ToRadians(40);
         readonly float cMinRotation = MathHelper.ToRadians(-40);
 
-        GraphicsDeviceManager _graphics;
-        Game _game;
+        private GraphicsDeviceManager _graphics;
+        private Game _game;
+        private Vector3 oldMovement;
+
+        public bool hasMoved { get; private set; }
+        public bool hasRotated { get; private set; }
 
         public CameraController(GraphicsDeviceManager GraphicsDeviceManager, Game game)
         {
@@ -26,6 +31,7 @@ namespace CNA_Graphics
         {
             _game.IsMouseVisible = false;
             Mouse.SetPosition(_graphics.PreferredBackBufferWidth / 2, _graphics.PreferredBackBufferHeight / 2);
+            oldMovement = Vector3.Zero;
         }
 
         public override void Update(float deltaTime)
@@ -55,6 +61,8 @@ namespace CNA_Graphics
                 parent.transform.rotation.X = cMinRotation;
 
             Mouse.SetPosition(_graphics.PreferredBackBufferWidth / 2, _graphics.PreferredBackBufferHeight / 2);
+
+            hasRotated = (Math.Abs(deltaMouse.X) > cRotationThreshold || Math.Abs(deltaMouse.Y) > cRotationThreshold);
         }
 
         private void HandleMovement(float deltaTime)
@@ -63,29 +71,42 @@ namespace CNA_Graphics
 
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                movement += Vector3.Transform(new Vector3(0, 0, -deltaTime), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                movement += Vector3.Transform(new Vector3(0, 0, -1), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                movement += Vector3.Transform(new Vector3(0, 0, deltaTime), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                movement += Vector3.Transform(new Vector3(0, 0, 1), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
-                movement += Vector3.Transform(new Vector3(-deltaTime, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                movement += Vector3.Transform(new Vector3(-1, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                movement += Vector3.Transform(new Vector3(deltaTime, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                movement += Vector3.Transform(new Vector3(1, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (movement != Vector3.Zero)
             {
                 movement = Vector3.Normalize(movement) * cMoveSpeed;
-                parent.transform.position += movement;
+                parent.transform.velocity = movement;
+                parent.transform.Move(deltaTime);
             }
+            else
+            {
+                parent.transform.velocity = Vector3.Zero;
+            }
+
+            if (oldMovement != movement)
+            {
+                hasMoved = true;
+                oldMovement = movement;
+            }
+            else
+                hasMoved = false;
         }
     }
 }

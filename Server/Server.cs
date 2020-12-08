@@ -62,6 +62,8 @@ namespace Server
                 {
                     packet = Packet.UDPReadPacket(udpListener, formatter, out endPoint);
 
+                    Console.WriteLine("Recieved packet from " + endPoint.ToString() + DateTime.Now);
+
                     switch (packet.packetType)
                     {
                         case PacketType.CLIENT_MOVE:
@@ -103,6 +105,7 @@ namespace Server
                             connectPacket.guid = client.guid;
 
                             client.endPoint = IPEndPoint.Parse(connectPacket.endPoint);
+                            connectPacket.endPoint = "";
                             List<Guid> users = new List<Guid>();
                             foreach (Client currClient in clients)
                             {

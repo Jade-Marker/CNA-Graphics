@@ -35,10 +35,11 @@ namespace Common
         private Vector position;
         private Vector rotation;
         private Vector scale;
+        private Vector velocity;
 
         public Transform GetTransform()
         {
-            Transform transform = new Transform(Vector.ToVec3(position), Vector.ToVec3(rotation), Vector.ToVec3(scale));
+            Transform transform = new Transform(Vector.ToVec3(position), Vector.ToVec3(rotation), Vector.ToVec3(scale), Vector.ToVec3(velocity));
             return transform;
         }
 
@@ -48,6 +49,7 @@ namespace Common
             position = Vector.FromVec3(transform.position);
             rotation = Vector.FromVec3(transform.rotation);
             scale = Vector.FromVec3(transform.scale);
+            velocity = Vector.FromVec3(transform.velocity);
 
             this.guid = guid;
 

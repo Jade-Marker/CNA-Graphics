@@ -25,6 +25,10 @@ namespace CNA_Graphics
         private Model fishModel;
         private Texture2D fishTexture;
         private Dictionary<Guid, Entity> users;
+        private float timer = 0.0f;
+
+        private const float cPacketSendTimer = 1.0f;
+        private const float cMovementFaultTolerance = 1.0f;
 
         public override void End()
         {
@@ -70,6 +74,7 @@ namespace CNA_Graphics
             if (Connect("127.0.0.1", 4444))
             {
                 Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty), formatter, writer);
+                Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
 
                 Thread udpThread = new Thread(() =>
                 {
@@ -102,9 +107,13 @@ namespace CNA_Graphics
                             if(users.ContainsKey(movement.guid) && users[movement.guid] != null)
                             {
                                 Transform transform = movement.GetTransform();
-                                users[movement.guid].transform.position = transform.position;
+
+                                if((users[movement.guid].transform.position - transform.position).LengthSquared() > cMovementFaultTolerance)
+                                    users[movement.guid].transform.position = transform.position;
+
                                 users[movement.guid].transform.rotation = new Vector3(transform.rotation.Z, transform.rotation.Y + MathHelper.ToRadians(90), transform.rotation.X);
                                 users[movement.guid].transform.scale = transform.scale;
+                                users[movement.guid].transform.velocity = transform.velocity;
                             }
                             break;
                     }
@@ -130,28 +139,11 @@ namespace CNA_Graphics
                         case PacketType.CLIENT_LIST:
                             ClientListPacket clientList = serverResponse as ClientListPacket;
                             foreach (Guid client in clientList.userList)
-                            {
-                                user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
-                                    new List<Component>() {
-                                    new Mesh(fishModel),
-                                    new Texture(fishTexture),
-                                    new Renderer()
-                                });
-                                entities.Add(user);
-                                users.Add(client, user);
-                            }
-
+                                InstantiateNewClient(client);
                             break;
 
                         case PacketType.CLIENT_CONNECT:
-                            user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
-                            new List<Component>() {
-                                new Mesh(fishModel),
-                                new Texture(fishTexture),
-                                new Renderer()
-                            });
-                            entities.Add(user);
-                            users.Add((serverResponse as ConnectPacket).guid, user);
+                            InstantiateNewClient((serverResponse as ConnectPacket).guid);
                             break;
 
                         case PacketType.CLIENT_DISCONNECT:
@@ -174,9 +166,31 @@ namespace CNA_Graphics
             }
         }
 
+        private void InstantiateNewClient(Guid guid)
+        {
+            Entity user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
+            new List<Component>() {
+                new Mesh(fishModel),
+                new Texture(fishTexture),
+                new Renderer()
+            });
+            entities.Add(user);
+            users.Add(guid, user);
+        }
+
         public override void Update(float deltaTime)
         {
-            Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
+            timer += deltaTime;
+            if (player.hasMoved || player.hasRotated || timer >= cPacketSendTimer)
+            {
+                Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
+                timer = 0;
+            }
+
+            foreach (Entity entity in users.Values)
+            {
+                entity.transform.Move(deltaTime);
+            }
         }
     }
 }
