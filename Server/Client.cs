@@ -22,6 +22,8 @@ namespace Server
         private object _readLock;
         private object _writeLock;
 
+        public string name;
+
         public Client(Socket socket, Guid guid)
         {
             _readLock = new object();

@@ -27,6 +27,9 @@ namespace CNA_Graphics
         private Dictionary<Guid, Entity> users;
         private float timer = 0.0f;
 
+        private SpriteFont playerNameFont;
+        private GraphicsDevice graphicsDevice;
+
         private const float cPacketSendTimer = 1.0f;
         private const float cMovementFaultTolerance = 1.0f;
 
@@ -36,12 +39,14 @@ namespace CNA_Graphics
             udpClient.Close();
         }
 
-        public ClientManager(CameraController player, List<Entity> entities, Model fishModel, Texture2D fishTexture)
+        public ClientManager(CameraController player, List<Entity> entities, Model fishModel, Texture2D fishTexture, SpriteFont playerNameFont, GraphicsDevice graphicsDevice)
         {
             this.player = player;
             this.entities = entities;
             this.fishModel = fishModel;
             this.fishTexture = fishTexture;
+            this.playerNameFont = playerNameFont;
+            this.graphicsDevice = graphicsDevice;
 
             users = new Dictionary<Guid, Entity>();
         }
@@ -73,7 +78,7 @@ namespace CNA_Graphics
         {
             if (Connect("127.0.0.1", 4444))
             {
-                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty), formatter, writer);
+                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty, "Player"), formatter, writer);
                 Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
 
                 Thread udpThread = new Thread(() =>
@@ -138,12 +143,14 @@ namespace CNA_Graphics
                     {
                         case PacketType.CLIENT_LIST:
                             ClientListPacket clientList = serverResponse as ClientListPacket;
-                            foreach (Guid client in clientList.userList)
-                                InstantiateNewClient(client);
+                            for(int i = 0; i <clientList.userList.Count; i++)
+                                InstantiateNewClient(clientList.userList[i], clientList.usernames[i]);
                             break;
 
                         case PacketType.CLIENT_CONNECT:
-                            InstantiateNewClient((serverResponse as ConnectPacket).guid);
+                            ConnectPacket connectPacket = serverResponse as ConnectPacket;
+
+                            InstantiateNewClient(connectPacket.guid, connectPacket.name);
                             break;
 
                         case PacketType.CLIENT_DISCONNECT:
@@ -166,13 +173,14 @@ namespace CNA_Graphics
             }
         }
 
-        private void InstantiateNewClient(Guid guid)
+        private void InstantiateNewClient(Guid guid, string name)
         {
             Entity user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
             new List<Component>() {
                 new Mesh(fishModel),
                 new Texture(fishTexture),
-                new Renderer()
+                new Renderer(),
+                new ClientName(playerNameFont, graphicsDevice, player.parent, name)
             });
             entities.Add(user);
             users.Add(guid, user);

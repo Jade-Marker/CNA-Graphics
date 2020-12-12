@@ -72,7 +72,7 @@ namespace CNA_Graphics
             gameObjects.Add(new Entity(
                 new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new ClientManager(player, gameObjects, fishModel, fishTexture),
+                    new ClientManager(player, gameObjects, fishModel, fishTexture, Content.Load<SpriteFont>("PlayerName"), GraphicsDevice),
                     
                 }));
         }

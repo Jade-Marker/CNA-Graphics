@@ -104,19 +104,23 @@ namespace Server
                             ConnectPacket connectPacket = receivedMessage as ConnectPacket;
                             connectPacket.guid = client.guid;
 
+                            client.name = connectPacket.name;
+
                             client.endPoint = IPEndPoint.Parse(connectPacket.endPoint);
                             connectPacket.endPoint = "";
                             List<Guid> users = new List<Guid>();
+                            List<string> userNames = new List<string>();
                             foreach (Client currClient in clients)
                             {
                                 if (currClient != client)
                                 {
                                     currClient.TCPSend(connectPacket);
                                     users.Add(currClient.guid);
+                                    userNames.Add(currClient.name);
                                 }
                             }
 
-                            client.TCPSend(new ClientListPacket(users));
+                            client.TCPSend(new ClientListPacket(users, userNames));
 
                             break;
                     }
