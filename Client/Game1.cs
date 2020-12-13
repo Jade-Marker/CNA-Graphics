@@ -14,7 +14,8 @@ namespace CNA_Graphics
         Texture2D fishTexture;
         Model fishModel;
 
-        List<Entity> gameObjects = new List<Entity>();
+        Scene movementScene;
+        Scene inputScene;
 
         DepthStencilState depthStencilLessThan = new DepthStencilState() { DepthBufferEnable = true, DepthBufferFunction = CompareFunction.Less };
 
@@ -23,6 +24,9 @@ namespace CNA_Graphics
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+
+            movementScene = new Scene();
+            inputScene = new Scene();
         }
 
         protected override void Initialize()
@@ -32,6 +36,7 @@ namespace CNA_Graphics
 
         protected override void LoadContent()
         {
+            Color textColor = Color.Red;
             fishTexture = Content.Load<Texture2D>("fishTexture");
             fishModel = Content.Load<Model>("fish");
 
@@ -48,8 +53,8 @@ namespace CNA_Graphics
             components2.Add(new Renderer());
             Entity fish2 = new Entity(new Transform(new Vector3(2, 0, -2), new Vector3(0, MathHelper.ToRadians(-90), 0), new Vector3(1, 1, 1), new Vector3(0, 0, 0)), components2);
 
-            gameObjects.Add(fish1);
-            gameObjects.Add(fish2);
+            movementScene.AddEntity(fish1);
+            movementScene.AddEntity(fish2);
 
             List<Component> components3 = new List<Component>();
             Camera cameraComponent = new Camera(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f));
@@ -57,9 +62,9 @@ namespace CNA_Graphics
             CameraController player = new CameraController(_graphics, this);
             components3.Add(player);
             Entity camera = new Entity(new Transform(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1), new Vector3(0, 0, 0)), components3);
-            gameObjects.Add(camera);
+            movementScene.AddEntity(camera);
 
-            gameObjects.Add(new Entity(
+            movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, -1, 0), new Vector3(MathHelper.ToRadians(-90), MathHelper.ToRadians(90), 0), new Vector3(10, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
                     new Mesh(Content.Load<Model>("plane")),
@@ -69,12 +74,25 @@ namespace CNA_Graphics
 
             CameraManager.MainCamera = cameraComponent;
 
-            gameObjects.Add(new Entity(
+            ClientManager clientManager = new ClientManager(player, movementScene.GetEntities(), fishModel, fishTexture, Content.Load<SpriteFont>("PlayerName"), GraphicsDevice, textColor);
+            movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new ClientManager(player, gameObjects, fishModel, fishTexture, Content.Load<SpriteFont>("PlayerName"), GraphicsDevice),
-                    
+                    clientManager
                 }));
+
+            clientManager.SetName("Player");
+
+            inputScene.AddEntity(new Entity(
+                new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
+                new List<Component>() {
+                    new NameGetter(GraphicsDevice, Content.Load<SpriteFont>("PlayerName"), "MovementScene", clientManager, Content.Load<Texture2D>("grass"), textColor)
+                }));
+
+            SceneManager.RegisterScene("InputScene", inputScene);
+            SceneManager.RegisterScene("MovementScene", movementScene);
+
+            SceneManager.ChangeScene("InputScene");
         }
 
         protected override void Update(GameTime gameTime)
@@ -84,9 +102,7 @@ namespace CNA_Graphics
 
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-
-            for (int i = 0; i < gameObjects.Count; i++)
-                gameObjects[i].Update(deltaTime);
+            SceneManager.currentScene.Update(deltaTime);
 
             base.Update(gameTime);
         }
@@ -95,23 +111,17 @@ namespace CNA_Graphics
         {
             GraphicsDevice.Clear(ClearOptions.DepthBuffer | ClearOptions.Target, Color.CornflowerBlue, 1.0f, 0);
 
-            GraphicsDevice.DepthStencilState = depthStencilLessThan;
-            GraphicsDevice.BlendState = BlendState.Opaque;
-            GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
-
             Matrix view = CameraManager.MainCamera.GetViewMatrix();
             Matrix projection = CameraManager.MainCamera.GetProjectionMatrix();
 
-            for (int i = 0; i < gameObjects.Count; i++)
-                gameObjects[i].Draw(view, projection);
+            SceneManager.currentScene.Draw(view, projection, depthStencilLessThan, BlendState.Opaque, RasterizerState.CullCounterClockwise, GraphicsDevice);
 
             base.Draw(gameTime);
         }
 
         protected override void OnExiting(object sender, EventArgs args)
         {
-            foreach (Entity entity in gameObjects)
-                entity.End();
+            SceneManager.currentScene.End();
 
             base.OnExiting(sender, args);
         }

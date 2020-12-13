@@ -20,8 +20,11 @@ namespace CNA_Graphics
             _components = components;
 
             foreach (Component component in _components)
-                component.Initialise(this);
+                component.Initialise(this);  
+        }
 
+        public void Start()
+        {
             foreach (Component component in _components)
                 component.Start();
         }

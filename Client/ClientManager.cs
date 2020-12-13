@@ -20,26 +20,24 @@ namespace CNA_Graphics
         private BinaryWriter writer;
         private BinaryReader reader;
         private BinaryFormatter formatter;
+
+        private float timer = 0.0f;
         private CameraController player;
         private List<Entity> entities;
+        private Dictionary<Guid, Entity> users;
+
         private Model fishModel;
         private Texture2D fishTexture;
-        private Dictionary<Guid, Entity> users;
-        private float timer = 0.0f;
+        private GraphicsDevice graphicsDevice;
 
         private SpriteFont playerNameFont;
-        private GraphicsDevice graphicsDevice;
+        private string playerName;
+        private Color textColor;
 
         private const float cPacketSendTimer = 1.0f;
         private const float cMovementFaultTolerance = 1.0f;
 
-        public override void End()
-        {
-            tcpClient.Close();
-            udpClient.Close();
-        }
-
-        public ClientManager(CameraController player, List<Entity> entities, Model fishModel, Texture2D fishTexture, SpriteFont playerNameFont, GraphicsDevice graphicsDevice)
+        public ClientManager(CameraController player, List<Entity> entities, Model fishModel, Texture2D fishTexture, SpriteFont playerNameFont, GraphicsDevice graphicsDevice, Color textColor)
         {
             this.player = player;
             this.entities = entities;
@@ -47,6 +45,7 @@ namespace CNA_Graphics
             this.fishTexture = fishTexture;
             this.playerNameFont = playerNameFont;
             this.graphicsDevice = graphicsDevice;
+            this.textColor = textColor;
 
             users = new Dictionary<Guid, Entity>();
         }
@@ -78,7 +77,7 @@ namespace CNA_Graphics
         {
             if (Connect("127.0.0.1", 4444))
             {
-                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty, "Player"), formatter, writer);
+                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty, playerName), formatter, writer);
                 Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
 
                 Thread udpThread = new Thread(() =>
@@ -93,6 +92,15 @@ namespace CNA_Graphics
                 });
                 tcpThread.Start();
             }
+        }
+        
+        public override void End()
+        {
+            tcpClient.Close();
+            udpClient.Close();
+            stream.Close();
+            writer.Close();
+            reader.Close();
         }
 
         private void UDPProcessServerResponse()
@@ -159,7 +167,10 @@ namespace CNA_Graphics
                             {
                                 user = users[disconnectPacket.guid];
 
-                                entities.Remove(user);
+                                lock (entities)
+                                {
+                                    entities.Remove(user);
+                                }
 
                                 users.Remove(disconnectPacket.guid);
                             }
@@ -180,9 +191,14 @@ namespace CNA_Graphics
                 new Mesh(fishModel),
                 new Texture(fishTexture),
                 new Renderer(),
-                new ClientName(playerNameFont, graphicsDevice, player.parent, name)
+                new ClientName(playerNameFont, graphicsDevice, player.parent, name, textColor)
             });
-            entities.Add(user);
+            user.Start();
+
+            lock (entities)
+            {
+                entities.Add(user);
+            }
             users.Add(guid, user);
         }
 
@@ -199,6 +215,11 @@ namespace CNA_Graphics
             {
                 entity.transform.Move(deltaTime);
             }
+        }
+
+        public void SetName(string name)
+        {
+            playerName = name;
         }
     }
 }

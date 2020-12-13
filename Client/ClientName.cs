@@ -9,19 +9,21 @@ namespace CNA_Graphics
     class ClientName:Component
     {
         private SpriteFont font;
-        private BasicEffect basicEffect;
-        SpriteBatch spriteBatch;
         private Entity player;
-        string name;
+        private string name;
+        private Color textColor;
 
-        public ClientName(SpriteFont font, GraphicsDevice graphicsDevice, Entity player, string name)
+        private BasicEffect basicEffect;
+        private SpriteBatch spriteBatch;
+
+        public ClientName(SpriteFont font, GraphicsDevice graphicsDevice, Entity player, string name, Color textColor)
         {
             this.font = font;
-            this.name = name;
             this.player = player;
+            this.name = name;
+            this.textColor = textColor;
 
             spriteBatch = new SpriteBatch(graphicsDevice);
-
             basicEffect = new BasicEffect(graphicsDevice)
             {
                 TextureEnabled = true,
@@ -38,7 +40,7 @@ namespace CNA_Graphics
             basicEffect.Projection = projection;
 
             spriteBatch.Begin(0, null, null, DepthStencilState.DepthRead, RasterizerState.CullNone, basicEffect);
-            spriteBatch.DrawString(font, name, Vector2.Zero, Color.Black, 0, font.MeasureString(name) /2, 0.025f, 0, 0);
+            spriteBatch.DrawString(font, name, Vector2.Zero, textColor, 0, font.MeasureString(name) /2, 0.025f, 0, 0);
             spriteBatch.End();
         }
     }
