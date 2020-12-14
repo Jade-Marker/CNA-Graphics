@@ -2,3 +2,5 @@ Sand texture: https://opengameart.org/content/sand-texture-seamless-texture-with
 Seabed texture: https://www.publicdomainpictures.net/en/view-image.php?image=11981&picture=seabed
 Fish: https://opengameart.org/content/perch-fish
 Water texture: https://opengameart.org/content/water
+
+Code used for text rendering in ClientName: http://www.shawnhargreaves.com/blog/spritebatch-billboards-in-a-3d-world.html

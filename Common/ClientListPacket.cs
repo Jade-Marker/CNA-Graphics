@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Common
 {
@@ -9,6 +8,7 @@ namespace Common
     {
         public List<Guid> userList;
         public List<string> usernames;
+
         public ClientListPacket(List<Guid> userList, List<string> usernames)
         {
             this.userList = userList;

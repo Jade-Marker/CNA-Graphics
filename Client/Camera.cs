@@ -1,13 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CNA_Graphics
 {
     class Camera : Component
     {
-        Matrix _projection;
+        private Matrix _projection;
 
         public Camera(Matrix projection)
         {

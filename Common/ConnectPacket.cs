@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 
 namespace Common
 {
@@ -11,6 +9,7 @@ namespace Common
         public string endPoint;
         public Guid guid;
         public string name;
+
         public ConnectPacket(IPEndPoint endPoint, Guid guid, string name)
         {
             this.endPoint = endPoint.ToString();

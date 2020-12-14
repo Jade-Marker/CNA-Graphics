@@ -10,23 +10,13 @@ namespace CNA_Graphics
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
-
-        Texture2D fishTexture;
-        Model fishModel;
-
-        Scene movementScene;
-        Scene inputScene;
-
-        DepthStencilState depthStencilLessThan = new DepthStencilState() { DepthBufferEnable = true, DepthBufferFunction = CompareFunction.Less };
+        private DepthStencilState _depthStencilLessThan = new DepthStencilState() { DepthBufferEnable = true, DepthBufferFunction = CompareFunction.Less };
 
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-
-            movementScene = new Scene();
-            inputScene = new Scene();
         }
 
         protected override void Initialize()
@@ -36,62 +26,67 @@ namespace CNA_Graphics
 
         protected override void LoadContent()
         {
+            Scene movementScene = new Scene();
+            Scene inputScene = new Scene();
             Color textColor = Color.Red;
-            fishTexture = Content.Load<Texture2D>("fishTexture");
-            fishModel = Content.Load<Model>("fish");
+            Texture2D fishTexture = Content.Load<Texture2D>("fishTexture");
+            Model fishModel = Content.Load<Model>("fish");
+            Model plane = Content.Load<Model>("plane");
+            Texture2D seabedTexture = Content.Load<Texture2D>("seabed");
+            Texture2D sandTexture = Content.Load<Texture2D>("Sand");
 
-            List<Component> components3 = new List<Component>();
-            Camera cameraComponent = new Camera(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, (float)_graphics.PreferredBackBufferWidth / (float)_graphics.PreferredBackBufferHeight, 0.1f, 100.0f));
-            components3.Add(cameraComponent);
+
+            Camera cameraComponent = new Camera(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, _graphics.PreferredBackBufferWidth / _graphics.PreferredBackBufferHeight, 0.1f, 100.0f));
             CameraController player = new CameraController(_graphics, this);
-            components3.Add(player);
-            Entity camera = new Entity(new Transform(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1), new Vector3(0, 0, 0)), components3);
-            movementScene.AddEntity(camera);
+            movementScene.AddEntity(new Entity(new Transform(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1), new Vector3(0, 0, 0)),
+                new List<Component>() {
+                    cameraComponent, player
+                }));
 
             movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, -1, 0), new Vector3(MathHelper.ToRadians(-90), MathHelper.ToRadians(90), 0), new Vector3(10, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new Mesh(Content.Load<Model>("plane")),
-                    new Texture(Content.Load<Texture2D>("Sand")),
+                    new Mesh(plane),
+                    new Texture(sandTexture),
                     new Renderer()
-                })) ;
+                }));
 
             movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, 3, 10), new Vector3(0, MathHelper.ToRadians(180), MathHelper.ToRadians(90)), new Vector3(5, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new Mesh(Content.Load<Model>("plane")),
-                    new Texture(Content.Load<Texture2D>("seabed")),
+                    new Mesh(plane),
+                    new Texture(seabedTexture),
                     new Renderer()
                 }));
 
             movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, 3, -10), new Vector3(0, 0, MathHelper.ToRadians(90)), new Vector3(5, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new Mesh(Content.Load<Model>("plane")),
-                    new Texture(Content.Load<Texture2D>("seabed")),
+                    new Mesh(plane),
+                    new Texture(seabedTexture),
                     new Renderer()
                 }));
 
             movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(10, 3, 0), new Vector3(0, MathHelper.ToRadians(-90), MathHelper.ToRadians(90)), new Vector3(5, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new Mesh(Content.Load<Model>("plane")),
-                    new Texture(Content.Load<Texture2D>("seabed")),
+                    new Mesh(plane),
+                    new Texture(seabedTexture),
                     new Renderer()
                 }));
 
             movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(-10, 3, 0), new Vector3(0, MathHelper.ToRadians(90), MathHelper.ToRadians(90)), new Vector3(5, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new Mesh(Content.Load<Model>("plane")),
-                    new Texture(Content.Load<Texture2D>("seabed")),
+                    new Mesh(plane),
+                    new Texture(seabedTexture),
                     new Renderer()
                 }));
 
             movementScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, 6, 0), new Vector3(MathHelper.ToRadians(90), 0, 0), new Vector3(10, 10, 10), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new Mesh(Content.Load<Model>("plane")),
+                    new Mesh(plane),
                     new Texture(Content.Load<Texture2D>("water")),
                     new Renderer()
                 }));
@@ -104,13 +99,13 @@ namespace CNA_Graphics
                 new List<Component>() {
                     clientManager
                 }));
-
             clientManager.SetName("Player");
+
 
             inputScene.AddEntity(new Entity(
                 new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
                 new List<Component>() {
-                    new NameGetter(GraphicsDevice, Content.Load<SpriteFont>("PlayerName"), "MovementScene", clientManager, Content.Load<Texture2D>("Sand"), textColor)
+                    new NameGetter(GraphicsDevice, Content.Load<SpriteFont>("PlayerName"), "MovementScene", clientManager, sandTexture, textColor)
                 }));
 
             SceneManager.RegisterScene("InputScene", inputScene);
@@ -138,7 +133,7 @@ namespace CNA_Graphics
             Matrix view = CameraManager.MainCamera.GetViewMatrix();
             Matrix projection = CameraManager.MainCamera.GetProjectionMatrix();
 
-            SceneManager.currentScene.Draw(view, projection, depthStencilLessThan, BlendState.Opaque, RasterizerState.CullCounterClockwise, GraphicsDevice);
+            SceneManager.currentScene.Draw(view, projection, _depthStencilLessThan, BlendState.Opaque, RasterizerState.CullCounterClockwise, GraphicsDevice);
 
             base.Draw(gameTime);
         }

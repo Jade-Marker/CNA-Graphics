@@ -1,16 +1,10 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Microsoft.Xna.Framework.Graphics;
 
 namespace CNA_Graphics
 {
     class Mesh : Component
     {
-        Model _model;
-
-        public Model model { get { return _model; } private set { _model = value; } }
+        public Model model { get; private set; }
 
 
         public Mesh(Model model)

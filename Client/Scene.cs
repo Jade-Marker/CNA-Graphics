@@ -1,8 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CNA_Graphics
 {
@@ -26,8 +24,10 @@ namespace CNA_Graphics
             return _entities;
         }
 
+
         public void Start()
         {
+            //_entities could be accessed by a different thread from ClientManager, so lock it while we're using it
             lock (_entities)
             {
                 foreach (Entity entity in _entities)

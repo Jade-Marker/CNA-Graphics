@@ -1,22 +1,20 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CNA_Graphics
 {
     class CameraController : Component
     {
-        const float cMoveSpeed = 5.0f;
-        const float cRotationSpeed = 0.1f;
-        const int cRotationThreshold = 5;
-        readonly float cMaxRotation = MathHelper.ToRadians(40);
-        readonly float cMinRotation = MathHelper.ToRadians(-40);
+        private const float cMoveSpeed = 5.0f;
+        private const float cRotationSpeed = 0.1f;
+        private const int cRotationThreshold = 5;
+        private readonly float cMaxRotation = MathHelper.ToRadians(40);
+        private readonly float cMinRotation = MathHelper.ToRadians(-40);
 
         private GraphicsDeviceManager _graphics;
         private Game _game;
-        private Vector3 oldMovement;
+        private Vector3 _oldMovement;
 
         public bool hasMoved { get; private set; }
         public bool hasRotated { get; private set; }
@@ -31,7 +29,7 @@ namespace CNA_Graphics
         {
             _game.IsMouseVisible = false;
             Mouse.SetPosition(_graphics.PreferredBackBufferWidth / 2, _graphics.PreferredBackBufferHeight / 2);
-            oldMovement = Vector3.Zero;
+            _oldMovement = Vector3.Zero;
         }
 
         public override void Update(float deltaTime)
@@ -47,18 +45,19 @@ namespace CNA_Graphics
 
         private void HandleRotation(float deltaTime)
         {
-            Vector3 rotation = new Vector3(0, 0, 0);
+            Vector3 rotation = parent.transform.rotation;
             Vector2 deltaMouse = new Vector2(Mouse.GetState().X - _graphics.PreferredBackBufferWidth / 2, Mouse.GetState().Y - _graphics.PreferredBackBufferHeight / 2);
 
             rotation.Y -= deltaMouse.X * deltaTime * cRotationSpeed;
             rotation.X -= deltaMouse.Y * deltaTime * cRotationSpeed;
-            parent.transform.rotation += rotation;
 
-            if (parent.transform.rotation.X > cMaxRotation)
-                parent.transform.rotation.X = cMaxRotation;
+            if (rotation.X > cMaxRotation)
+                rotation.X = cMaxRotation;
 
-            if (parent.transform.rotation.X < cMinRotation)
-                parent.transform.rotation.X = cMinRotation;
+            if (rotation.X < cMinRotation)
+                rotation.X = cMinRotation;
+
+            parent.transform.SetRotation(rotation);
 
             Mouse.SetPosition(_graphics.PreferredBackBufferWidth / 2, _graphics.PreferredBackBufferHeight / 2);
 
@@ -67,43 +66,43 @@ namespace CNA_Graphics
 
         private void HandleMovement(float deltaTime)
         {
-            Vector3 movement = new Vector3(0, 0, 0);
+            Vector3 velocity = new Vector3(0, 0, 0);
 
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                movement += Vector3.Transform(new Vector3(0, 0, -1), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                velocity += Vector3.Transform(new Vector3(0, 0, -1), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                movement += Vector3.Transform(new Vector3(0, 0, 1), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                velocity += Vector3.Transform(new Vector3(0, 0, 1), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
-                movement += Vector3.Transform(new Vector3(-1, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                velocity += Vector3.Transform(new Vector3(-1, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                movement += Vector3.Transform(new Vector3(1, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
+                velocity += Vector3.Transform(new Vector3(1, 0, 0), Matrix.CreateRotationY(parent.transform.rotation.Y));
             }
 
-            if (movement != Vector3.Zero)
+            if (velocity != Vector3.Zero)
             {
-                movement = Vector3.Normalize(movement) * cMoveSpeed;
-                parent.transform.velocity = movement;
+                velocity = Vector3.Normalize(velocity) * cMoveSpeed;
+                parent.transform.SetVelocity(velocity);
                 parent.transform.Move(deltaTime);
             }
             else
             {
-                parent.transform.velocity = Vector3.Zero;
+                parent.transform.SetVelocity(Vector3.Zero);
             }
 
-            if (oldMovement != movement)
+            if (_oldMovement != velocity)
             {
                 hasMoved = true;
-                oldMovement = movement;
+                _oldMovement = velocity;
             }
             else
                 hasMoved = false;

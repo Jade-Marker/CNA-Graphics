@@ -7,63 +7,62 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading;
 
 namespace CNA_Graphics
 {
     class ClientManager:Component
     {
-        private UdpClient udpClient;
-        private TcpClient tcpClient;
-        private NetworkStream stream;
-        private BinaryWriter writer;
-        private BinaryReader reader;
-        private BinaryFormatter formatter;
+        private UdpClient _udpClient;
+        private TcpClient _tcpClient;
+        private NetworkStream _stream;
+        private BinaryWriter _writer;
+        private BinaryReader _reader;
+        private BinaryFormatter _formatter;
 
-        private float timer = 0.0f;
-        private CameraController player;
-        private List<Entity> entities;
-        private Dictionary<Guid, Entity> users;
+        private float _timer = 0.0f;
+        private CameraController _player;
+        private List<Entity> _entities;
+        private Dictionary<Guid, Entity> _users;
 
-        private Model fishModel;
-        private Texture2D fishTexture;
-        private GraphicsDevice graphicsDevice;
+        private Model _fishModel;
+        private Texture2D _fishTexture;
+        private GraphicsDevice _graphicsDevice;
 
-        private SpriteFont playerNameFont;
-        private string playerName;
-        private Color textColor;
+        private SpriteFont _playerNameFont;
+        private string _playerName;
+        private Color _textColor;
 
         private const float cPacketSendTimer = 1.0f;
         private const float cMovementFaultTolerance = 1.0f;
 
         public ClientManager(CameraController player, List<Entity> entities, Model fishModel, Texture2D fishTexture, SpriteFont playerNameFont, GraphicsDevice graphicsDevice, Color textColor)
         {
-            this.player = player;
-            this.entities = entities;
-            this.fishModel = fishModel;
-            this.fishTexture = fishTexture;
-            this.playerNameFont = playerNameFont;
-            this.graphicsDevice = graphicsDevice;
-            this.textColor = textColor;
+            _player = player;
+            _entities = entities;
+            _fishModel = fishModel;
+            _fishTexture = fishTexture;
+            _playerNameFont = playerNameFont;
+            _graphicsDevice = graphicsDevice;
+            _textColor = textColor;
 
-            users = new Dictionary<Guid, Entity>();
+            _users = new Dictionary<Guid, Entity>();
         }
 
         public bool Connect(string ipAddress, int port)
         {
             try
             {
-                tcpClient = new TcpClient();
-                tcpClient.Connect(IPAddress.Parse(ipAddress), port);
+                _tcpClient = new TcpClient();
+                _tcpClient.Connect(IPAddress.Parse(ipAddress), port);
 
-                udpClient = new UdpClient();
-                udpClient.Connect(IPAddress.Parse(ipAddress), port);
+                _udpClient = new UdpClient();
+                _udpClient.Connect(IPAddress.Parse(ipAddress), port);
 
-                stream = tcpClient.GetStream();
-                writer = new BinaryWriter(stream);
-                reader = new BinaryReader(stream);
-                formatter = new BinaryFormatter();
+                _stream = _tcpClient.GetStream();
+                _writer = new BinaryWriter(_stream);
+                _reader = new BinaryReader(_stream);
+                _formatter = new BinaryFormatter();
                 return true;
             }
             catch (Exception e)
@@ -77,8 +76,8 @@ namespace CNA_Graphics
         {
             if (Connect("127.0.0.1", 4444))
             {
-                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)udpClient.Client.LocalEndPoint, Guid.Empty, playerName), formatter, writer);
-                Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
+                Packet.TCPSendPacket(new ConnectPacket((IPEndPoint)_udpClient.Client.LocalEndPoint, Guid.Empty, _playerName), _formatter, _writer);
+                Packet.UDPSendPacket(_udpClient, _formatter, new MovementPacket(_player.parent.transform, Guid.Empty));
 
                 Thread udpThread = new Thread(() =>
                 {
@@ -96,11 +95,11 @@ namespace CNA_Graphics
         
         public override void End()
         {
-            tcpClient.Close();
-            udpClient.Close();
-            stream.Close();
-            writer.Close();
-            reader.Close();
+            _tcpClient.Close();
+            _udpClient.Close();
+            _stream.Close();
+            _writer.Close();
+            _reader.Close();
         }
 
         private void UDPProcessServerResponse()
@@ -110,23 +109,24 @@ namespace CNA_Graphics
                 IPEndPoint endPoint;
                 while (true)
                 {
-                    Packet packet = Packet.UDPReadPacket(udpClient, formatter, out endPoint);
+                    Packet packet = Packet.UDPReadPacket(_udpClient, _formatter, out endPoint);
 
                     switch (packet.packetType)
                     {
                         case PacketType.CLIENT_MOVE:
                             MovementPacket movement = packet as MovementPacket;
 
-                            if(users.ContainsKey(movement.guid) && users[movement.guid] != null)
+                            if(_users.ContainsKey(movement.guid) && _users[movement.guid] != null)
                             {
                                 Transform transform = movement.GetTransform();
 
-                                if((users[movement.guid].transform.position - transform.position).LengthSquared() > cMovementFaultTolerance)
-                                    users[movement.guid].transform.position = transform.position;
+                                if((_users[movement.guid].transform.position - transform.position).LengthSquared() > cMovementFaultTolerance)
+                                    _users[movement.guid].transform.SetPosition(transform.position);
 
-                                users[movement.guid].transform.rotation = new Vector3(transform.rotation.Z, transform.rotation.Y + MathHelper.ToRadians(90), transform.rotation.X);
-                                users[movement.guid].transform.scale = transform.scale;
-                                users[movement.guid].transform.velocity = transform.velocity;
+                                //+90 in y as player model was oriented wrong without it
+                                _users[movement.guid].transform.SetRotation(new Vector3(transform.rotation.Z, transform.rotation.Y + MathHelper.ToRadians(90), transform.rotation.X));
+                                _users[movement.guid].transform.SetScale(transform.scale);
+                                _users[movement.guid].transform.SetVelocity(transform.velocity);
                             }
                             break;
                     }
@@ -143,7 +143,7 @@ namespace CNA_Graphics
             Packet serverResponse;
             try
             {
-                while ((serverResponse = Packet.TCPReadPacket(reader, formatter)) != null)
+                while ((serverResponse = Packet.TCPReadPacket(_reader, _formatter)) != null)
                 {
                     Entity user;
 
@@ -163,16 +163,18 @@ namespace CNA_Graphics
 
                         case PacketType.CLIENT_DISCONNECT:
                             DisconnectPacket disconnectPacket = serverResponse as DisconnectPacket;
-                            if(users.ContainsKey(disconnectPacket.guid))
+                            if(_users.ContainsKey(disconnectPacket.guid))
                             {
-                                user = users[disconnectPacket.guid];
+                                user = _users[disconnectPacket.guid];
 
-                                lock (entities)
+                                //_entities gets looped through in the Scene class, so we don't want it to be altered while doing that
+                                //So, lock _entities
+                                lock (_entities)
                                 {
-                                    entities.Remove(user);
+                                    _entities.Remove(user);
                                 }
 
-                                users.Remove(disconnectPacket.guid);
+                                _users.Remove(disconnectPacket.guid);
                             }
                             break;
                     }
@@ -188,30 +190,32 @@ namespace CNA_Graphics
         {
             Entity user = new Entity(new Transform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)),
             new List<Component>() {
-                new Mesh(fishModel),
-                new Texture(fishTexture),
+                new Mesh(_fishModel),
+                new Texture(_fishTexture),
                 new Renderer(),
-                new ClientName(playerNameFont, graphicsDevice, player.parent, name, textColor)
+                new ClientName(_playerNameFont, _graphicsDevice, _player.parent, name, _textColor)
             });
             user.Start();
 
-            lock (entities)
+            //_entities gets looped through in the Scene class, so we don't want it to be altered while doing that
+            //So, lock _entities
+            lock (_entities)
             {
-                entities.Add(user);
+                _entities.Add(user);
             }
-            users.Add(guid, user);
+            _users.Add(guid, user);
         }
 
         public override void Update(float deltaTime)
         {
-            timer += deltaTime;
-            if (player.hasMoved || player.hasRotated || timer >= cPacketSendTimer)
+            _timer += deltaTime;
+            if (_player.hasMoved || _player.hasRotated || _timer >= cPacketSendTimer)
             {
-                Packet.UDPSendPacket(udpClient, formatter, new MovementPacket(player.parent.transform, Guid.Empty));
-                timer = 0;
+                Packet.UDPSendPacket(_udpClient, _formatter, new MovementPacket(_player.parent.transform, Guid.Empty));
+                _timer = 0;
             }
 
-            foreach (Entity entity in users.Values)
+            foreach (Entity entity in _users.Values)
             {
                 entity.transform.Move(deltaTime);
             }
@@ -219,7 +223,7 @@ namespace CNA_Graphics
 
         public void SetName(string name)
         {
-            playerName = name;
+            _playerName = name;
         }
     }
 }

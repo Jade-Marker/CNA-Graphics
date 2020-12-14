@@ -1,27 +1,23 @@
 ﻿using Common;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Server
 {
     class Server
     {
-        private UdpClient udpListener;
-        private TcpListener tcpListener;
-        private ConcurrentSet<Client> clients;
+        private UdpClient _udpListener;
+        private TcpListener _tcpListener;
+        private ConcurrentSet<Client> _clients;
 
         public Server(string ipAddress, int port)
         {
-            tcpListener = new TcpListener(IPAddress.Parse(ipAddress), port);
-            udpListener = new UdpClient(port);
+            _tcpListener = new TcpListener(IPAddress.Parse(ipAddress), port);
+            _udpListener = new UdpClient(port);
 
             Thread thread = new Thread(() => { UDPListen(); });
             thread.Start();
@@ -29,15 +25,15 @@ namespace Server
 
         public void Start()
         {
-            clients = new ConcurrentSet<Client>();
-            tcpListener.Start();
+            _clients = new ConcurrentSet<Client>();
+            _tcpListener.Start();
 
             while(true)
             {
-                Socket socket = tcpListener.AcceptSocket();
+                Socket socket = _tcpListener.AcceptSocket();
 
                 Client client = new Client(socket, Guid.NewGuid());
-                clients.TryAdd(client);
+                _clients.TryAdd(client);
 
                 Thread thread = new Thread(() => { TCPClientMethod(client); });
                 thread.Start();
@@ -46,8 +42,8 @@ namespace Server
 
         public void Stop()
         {
-            tcpListener.Stop();
-            udpListener.Close();
+            _tcpListener.Stop();
+            _udpListener.Close();
         }
 
         private void UDPListen()
@@ -60,7 +56,7 @@ namespace Server
 
                 try
                 {
-                    packet = Packet.UDPReadPacket(udpListener, formatter, out endPoint);
+                    packet = Packet.UDPReadPacket(_udpListener, formatter, out endPoint);
 
                     Console.WriteLine("Recieved packet from " + endPoint.ToString() + DateTime.Now);
 
@@ -69,16 +65,20 @@ namespace Server
                         case PacketType.CLIENT_MOVE:
                             MovementPacket movementPacket = packet as MovementPacket;
 
-                            foreach (Client client in clients)
+                            foreach (Client client in _clients)
                             {
+                                //Clients aren't aware of their guid, so set find the client and set the guid to their guid
                                 if ((client.endPoint != null) && client.endPoint.ToString() == endPoint.ToString())
+                                { 
                                     movementPacket.guid = client.guid;
+                                }
                             }
 
-                            foreach (Client client in clients)
+                            foreach (Client client in _clients)
                             {
+                                //Send to everyone other than the original sender
                                 if ((client.endPoint != null) && (endPoint.ToString() != client.endPoint.ToString()))
-                                    Packet.UDPSendPacket(udpListener, client.endPoint, formatter, movementPacket);
+                                    Packet.UDPSendPacket(_udpListener, client.endPoint, formatter, movementPacket);
                             }
                             break;
                     }
@@ -101,16 +101,17 @@ namespace Server
                     switch (receivedMessage.packetType)
                     {
                         case PacketType.CLIENT_CONNECT:
+                            List<Guid> users = new List<Guid>();
+                            List<string> userNames = new List<string>();
                             ConnectPacket connectPacket = receivedMessage as ConnectPacket;
                             connectPacket.guid = client.guid;
 
-                            client.name = connectPacket.name;
+                            client.SetName(connectPacket.name);
 
-                            client.endPoint = IPEndPoint.Parse(connectPacket.endPoint);
-                            connectPacket.endPoint = "";
-                            List<Guid> users = new List<Guid>();
-                            List<string> userNames = new List<string>();
-                            foreach (Client currClient in clients)
+                            client.SetEndPoint(IPEndPoint.Parse(connectPacket.endPoint));
+                            connectPacket.endPoint = "";    //blank out the endpoint for security
+                            
+                            foreach (Client currClient in _clients)
                             {
                                 if (currClient != client)
                                 {
@@ -132,9 +133,9 @@ namespace Server
             
 
             client.Close();
-            clients.TryRemove(client);
+            _clients.TryRemove(client);
 
-            foreach (Client currClient in clients)
+            foreach (Client currClient in _clients)
             {
                 currClient.TCPSend(new DisconnectPacket(client.guid));
             }

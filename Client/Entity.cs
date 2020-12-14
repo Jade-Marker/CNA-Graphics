@@ -1,22 +1,18 @@
 ﻿using Common;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
 
 namespace CNA_Graphics
 {
     public class Entity
     {
-        Transform _transform;
-        List<Component> _components;
-        public Transform transform { get { return _transform; } private set { _transform = value; } }
+        private List<Component> _components;
+        public Transform transform { get; private set; }
 
         public Entity(Transform transform, List<Component> components)
         {
-            _transform = transform;
+            this.transform = transform;
             _components = components;
 
             foreach (Component component in _components)

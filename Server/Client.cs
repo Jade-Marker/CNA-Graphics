@@ -1,18 +1,17 @@
 ﻿using Common;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 
 namespace Server
 {
     class Client
     {
-        public IPEndPoint endPoint;
-        public Guid guid;
+        public IPEndPoint endPoint { get; private set; }
+        public Guid guid { get; private set; }
+        public string name { get; private set; }
 
         private Socket _socket;
         private NetworkStream _stream;
@@ -21,8 +20,6 @@ namespace Server
         private BinaryFormatter _formatter;
         private object _readLock;
         private object _writeLock;
-
-        public string name;
 
         public Client(Socket socket, Guid guid)
         {
@@ -46,6 +43,16 @@ namespace Server
             _reader.Close();
             _writer.Close();
             _socket.Close();
+        }
+
+        public void SetEndPoint(IPEndPoint endPoint)
+        {
+            this.endPoint = endPoint;
+        }
+
+        public void SetName(string name)
+        {
+            this.name = name;
         }
 
         public Packet Read()
