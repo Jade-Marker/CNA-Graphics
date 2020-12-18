@@ -116,9 +116,6 @@ namespace CNA_Graphics
 
         protected override void Update(GameTime gameTime)
         {
-            if ((GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) && IsActive)
-                Exit();
-
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             SceneManager.currentScene.Update(deltaTime);
